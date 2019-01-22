@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="utf-8" />
+    </head>
+    <body>
+      <div>
+        <p>Value: <span id="counter-value"></span></p>
+        <button id="increment">Increment</button>
+        <button id="decrement">Decrement</button>
+        <button id="reset">Reset</button>
+      </div>
+
+      <script src="./web3.min.js"></script>
+      <script src="https://code.jquery.com/jquery-3.3.1.slim.js" integrity="sha256-fNXJFIlca05BIO2Y5zh1xrShK3ME+/lYZ0j+ChxX2DA="
+        crossorigin="anonymous"></script>
+
+      <script>
+        var contract;
+
+        $(document).ready(function() {
+          initContract();
+
+          getValue();
+        });
+
+        function initContract() {
+          // Instantiate provider (like metamask)
+          web3 = new Web3(web3.currentProvider);
+
+          // Address of the deployed smart contract (from etherscan)
+          var address = "0x2e7eB16198988566edF392E8ddf545ea38f8DD13";
+          
+          // Copied from remix ide
+          var abi = [
+            {
+              "constant": false,
+              "inputs": [],
+              "name": "decrementCounter",
+              "outputs": [],
+              "payable": false,
+              "stateMutability": "nonpayable",
+              "type": "function"
+            },
+            {
+              "constant": false,
+              "inputs": [],
+              "name": "incrementCounter",
+              "outputs": [],
+              "payable": false,
+              "stateMutability": "nonpayable",
+              "type": "function"
+            },
+            {
+              "constant": false,
+              "inputs": [],
+              "name": "reset",
+              "outputs": [],
+              "payable": false,
+              "stateMutability": "nonpayable",
+              "type": "function"
+            },
+            {
+              "inputs": [],
+              "payable": false,
+              "stateMutability": "nonpayable",
+              "type": "constructor"
+            },
+            {
+              "constant": true,
+              "inputs": [],
+              "name": "getCounter",
+              "outputs": [
+                {
+                  "name": "",
+                  "type": "int256"
+                }
+              ],
+              "payable": false,
+              "stateMutability": "view",
+              "type": "function"
+            }
+          ];
+
+          contract = new web3.eth.Contract(abi, address);
+        }
+
+        function getValue() {
+          // not changing state, use call to read value
+          contract.methods.getCounter().call()
+            .then((result) => {
+              $('#counter-value').html(result);
+            });
+        }
+
+        function watchTransaction(transaction) {
+          // Loop?
+          web3.eth.getTransactionReceipt(transaction.transactionHash, (error, result) => {
+            // if error throw message
+            if (typeof(error) !== "undefined") {
+              console.log("Error getting transaction receipt");
+              return;
+            }
+
+            // If there is no result then the transaction is still pending
+            if (typeof(result) === "undefined") {
+              // Transaction still pending, wait and check again.
+              console.log("Transaction still pending. Will try again in a few seconds.")
+              setTimeout(watchTransaction(transaction), 2000);
+              return;
+            }
+
+            // check the status from result
+            if (result.status === true) {
+              console.log("Transaction complete!");
+            } else if (result.state === false) {
+              console.log("Transaction reverted");
+            } 
+          });
+        }
+
+        $('#increment').click(function() {
+          // Call transaction wrapper
+          // Show toast for verifying transaction details
+          console.log("Verifying transaction details");
+
+          web3.eth.getAccounts()
+            .then((accounts) => {
+              var acct = accounts[0];
+
+              // Show toast for starting transaction
+              console.log("Starting Transaction");
+              // return contract.methods.incrementCounter().send({from: acct});
+              contract.methods.incrementCounter().send({from: acct})
+                .on('transactionHash', (hash) => {
+                  // Submitted to block and received transaction hash
+                  console.log(hash);
+                  console.log("Transaction sent to block successfully. Result pending.");
+                })
+                .on('confirmation', (confirmationNumber, receipt) => {
+                  // Confirmed with receipt
+                  console.log("confirmation #: ", confirmationNumber, "receipt from confirm: ", receipt);
+                  console.log("Transaction confirmed!");
+                })
+                .on('receipt', (receipt) => {
+                  // Received receipt
+                  console.log("receipt: ", receipt);
+                })
+                .on('error', (error) => {
+                  // Errored out
+                  console.log("Error: ", error);
+                })
+            });
+        });
+
+        $('#decrement').click(function() {
+
+        });
+      </script>
+    </body>
+  </html>
+</html>
