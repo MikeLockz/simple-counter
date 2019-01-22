@@ -29,7 +29,7 @@
           web3 = new Web3(web3.currentProvider);
 
           // Address of the deployed smart contract (from etherscan)
-          var address = "0x2e7eB16198988566edF392E8ddf545ea38f8DD13";
+          var address = "0x0f69f0ac4b92bf0d101b5747eed3fa6b653a36f8";
           
           // Copied from remix ide
           var abi = [
@@ -114,7 +114,14 @@
                 .on('confirmation', (confirmationNumber, receipt) => {
                   // Confirmed with receipt
                   console.log("confirmation #: ", confirmationNumber, "receipt from confirm: ", receipt);
-                  console.log("Transaction confirmed!");
+                  console.log("Transaction confirmed.");
+
+                  // check the status from result
+                  if (receipt.status === true) {
+                    console.log("Transaction completed successfully!");
+                  } else if (receipt.status === false) {
+                    console.log("Transaction reverted due to error.");
+                  } 
                 })
                 .on('receipt', (receipt) => {
                   // Received receipt
@@ -125,7 +132,7 @@
                 })
                 .on('error', (error) => {
                   // Errored out
-                  console.log("Error: ", error);
+                  console.log(error);
                 })
             });
         }
@@ -137,6 +144,10 @@
 
         $('#decrement').click(function() {
           contractMethodSendWrapper(contract, "decrementCounter");
+        });
+
+        $('#reset').click(function() {
+          contractMethodSendWrapper(contract, "reset");
         });
       </script>
     </body>
